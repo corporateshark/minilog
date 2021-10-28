@@ -271,24 +271,27 @@ void minilog::log(eLogLevel level, const char* format, ...)
 	}
 }
 
-void minilog::pushProc(const char* name)
+bool minilog::pushProc(const char* name)
 {
 	ThreadLogContext* ctx = getThreadLogContext();
 
 	ctx->procs[ ctx->procsNestingLevel ] = name;
 	ctx->hasLogsOnThisLevel[ ctx->procsNestingLevel ] = false;
 	ctx->procsNestingLevel++;
+
 	assert(ctx->procsNestingLevel < kMaxProcsNesting);
+
+	return ctx->procsNestingLevel < kMaxProcsNesting;
 }
 
 void minilog::popProc()
 {
 	ThreadLogContext* ctx = getThreadLogContext();
 
+	assert(ctx->procsNestingLevel > 0);
+
 	if (ctx->hasLogsOnThisLevel[ctx->procsNestingLevel])
-	{
 		log(Debug, "<-");
-	}
 
 	ctx->procsNestingLevel--;
 }

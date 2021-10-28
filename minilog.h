@@ -35,6 +35,6 @@ namespace minilog
 	void deinitialize();
 	void log(eLogLevel level, const char* format, ...);
 	void setCurrentThreadName(const char* name);
-	void pushProc(const char* name);
+	bool pushProc(const char* name);
 	void popProc();
 } // namespace minilog

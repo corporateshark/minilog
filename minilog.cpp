@@ -41,6 +41,10 @@ SOFTWARE.
 #	define OS_MACOS 1
 #endif
 
+#if defined (__ANDROID__)
+#	define OS_ANDROID 1
+#endif
+
 #if OS_WINDOWS
 #	define WIN32_LEAN_AND_MEAN
 #	define NOMINMAX
@@ -50,6 +54,10 @@ SOFTWARE.
 #else
 #	include <sys/time.h>
 #	include <pthread.h>
+#endif
+
+#if OS_ANDROID
+#	include <android/log.h>
 #endif
 
 namespace {
@@ -93,7 +101,7 @@ void minilog::deinitialize()
 		return;
 
 	if (config.writeOutro)
-		log(minilog::Log, "minilog: deinitializing ...");
+		log(minilog::Log, "minilog: deinitializing...");
 
 	fflush(logFile);
 	fclose(logFile);
@@ -148,13 +156,20 @@ static uint32_t writeTimeStamp(char* buffer, uint32_t maxLength)
 
 static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
 {
+#if OS_ANDROID
+	if (ctx->threadName)
+		__android_log_print(ANDROID_LOG_INFO, "minilog", "(%s):%s", ctx->threadName, msg);
+	else
+		__android_log_print(ANDROID_LOG_INFO, "minilog", "(%llu):%s", (unsigned long long)ctx->threadId, msg);
+#endif
+
 	if (!logFile)
 		return;
 
 	if (ctx->threadName)
 		fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
 	else
-		fprintf(logFile, "(%llu):%s\n", ctx->threadId, msg);
+		fprintf(logFile, "(%llu):%s\n", (unsigned long long)ctx->threadId, msg);
 
 	if (config.forceFlush)
 		fflush(logFile);
@@ -218,7 +233,7 @@ void minilog::log(eLogLevel level, const char* format, ...)
 		if (ctx->threadName)
 			printf("(%s):%s\n", ctx->threadName, buffer);
 		else
-			printf("(%llu):%s\n", ctx->threadId, buffer);
+			printf("(%llu):%s\n", (unsigned long long)ctx->threadId, buffer);
 
 		if (config.coloredConsole)
 		{

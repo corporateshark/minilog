@@ -27,9 +27,15 @@ SOFTWARE.
 #include "minilog.h"
 
 #include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 
 #if defined(_WIN32) || defined(_WIN64)
+#	define OS_WINDOWS	1
+#endif
+
+#if OS_WINDOWS
 #	define WIN32_LEAN_AND_MEAN
 #	define NOMINMAX
 #	define NOIME
@@ -81,7 +87,7 @@ void minilog::deinitialize()
 
 static uint32_t getCurrentMilliseconds()
 {
-#if defined(_WIN32) || defined(_WIN64)
+#if OS_WINDOWS
 	SYSTEMTIME st;
 	GetSystemTime(&st);
 	return st.wMilliseconds;
@@ -134,4 +140,34 @@ void minilog::log(eLogLevel level, const char* format, ...)
 	va_end(args);
 
 	writeMessageToLog(buffer);
+
+	if (level >= config.logLevelPrintToConsole)
+	{
+		if (config.coloredConsole)
+		{
+#if OS_WINDOWS
+			auto getAttr = [](minilog::eLogLevel level) -> WORD
+			{
+				switch (level) {
+					case Paranoid:   return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+					case Debug:      return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+					case Log:        return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+					case Warning:    return FOREGROUND_RED | FOREGROUND_INTENSITY;
+					case FatalError: return FOREGROUND_RED | FOREGROUND_INTENSITY;
+				}
+				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+			};
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), getAttr(level));
+#endif // OS_WINDOWS
+		}
+
+		printf("%s\n", buffer);
+
+		if (config.coloredConsole)
+		{
+#if OS_WINDOWS
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#endif // OS_WINDOWS
+		}
+	}
 }

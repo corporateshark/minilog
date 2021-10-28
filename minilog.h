@@ -8,6 +8,8 @@ MIT License
 Copyright (c) 2021 Sergey Kosarevsky
 **/
 
+#include <stdarg.h>
+
 namespace minilog
 {
 	enum eLogLevel
@@ -34,6 +36,9 @@ namespace minilog
 	bool initialize(const LogConfig& cfg);
 	void deinitialize();
 	void log(eLogLevel level, const char* format, ...);
+	void log(eLogLevel level, const char* format, va_list args);
+	void logRaw(eLogLevel level, const char* format, ...);
+	void logRaw(eLogLevel level, const char* format, va_list args);
 	void setCurrentThreadName(const char* name);
 	bool pushProc(const char* name);
 	void popProc();

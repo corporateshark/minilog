@@ -206,6 +206,14 @@ void minilog::setCurrentThreadName(const char* name)
 
 void minilog::log(eLogLevel level, const char* format, ...)
 {
+	va_list args;
+	va_start(args, format);
+	log(level, format, args);
+	va_end(args);
+}
+
+void minilog::log(eLogLevel level, const char* format, va_list args)
+{
 	if (level < config.logLevel)
 		return;
 
@@ -217,10 +225,7 @@ void minilog::log(eLogLevel level, const char* format, ...)
 	char* scratchBuf = writeTimeStamp(buffer, bufferEnd);
 	scratchBuf = writeCurrentProcsNesting(scratchBuf, bufferEnd);
 
-	va_list args;
-	va_start(args, format);
 	vsnprintf(scratchBuf, uint32_t(bufferEnd - scratchBuf), format, args);
-	va_end(args);
 
 	std::lock_guard<std::mutex> lock(logMutex);
 
@@ -269,6 +274,32 @@ void minilog::log(eLogLevel level, const char* format, ...)
 #endif // OS_WINDOWS
 		}
 	}
+}
+
+void minilog::logRaw(eLogLevel level, const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	logRaw(level, format, args);
+	va_end(args);
+}
+
+void minilog::logRaw(eLogLevel level, const char* format, va_list args)
+{
+	constexpr uint32_t kBufferLength = 8192;
+
+	char buffer[kBufferLength];
+
+	vsnprintf(buffer, kBufferLength - 1, format, args);
+
+	std::lock_guard<std::mutex> lock(logMutex);
+
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	if (ctx->procsNestingLevel > 0)
+		ctx->hasLogsOnThisLevel[ctx->procsNestingLevel] = true;
+
+	writeMessageToLog(buffer, ctx);
 }
 
 bool minilog::pushProc(const char* name)

@@ -158,6 +158,9 @@ void minilog::log(eLogLevel level, const char* format, ...)
 				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 			};
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), getAttr(level));
+#else
+			if (level >= Warning)
+				printf("\033[1;31m");
 #endif // OS_WINDOWS
 		}
 
@@ -167,6 +170,9 @@ void minilog::log(eLogLevel level, const char* format, ...)
 		{
 #if OS_WINDOWS
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#else
+			if (level >= Warning)
+				printf("\033[0m");
 #endif // OS_WINDOWS
 		}
 	}

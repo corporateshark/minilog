@@ -28,6 +28,7 @@ namespace minilog
 		bool writeIntro = true;
 		bool writeOutro = true;
 		bool coloredConsole = true;
+		const char* mainThreadName = "MainThread";
 	};
 
 	bool initialize(const LogConfig& cfg);

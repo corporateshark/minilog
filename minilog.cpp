@@ -37,6 +37,10 @@ SOFTWARE.
 #	define OS_WINDOWS	1
 #endif
 
+#if defined(__APPLE__)
+#	define OS_MACOS 1
+#endif
+
 #if OS_WINDOWS
 #	define WIN32_LEAN_AND_MEAN
 #	define NOMINMAX
@@ -70,6 +74,8 @@ bool minilog::initialize(const minilog::LogConfig& cfg)
 	if (!logFile)
 		return false;
 
+	setCurrentThreadName(cfg.mainThreadName);
+
 	config = cfg;
 
 	if (config.writeIntro)
@@ -99,6 +105,8 @@ static uint64_t getCurrentThreadHandle()
 {
 #if OS_WINDOWS
 	return GetCurrentThreadId();
+#elif OS_MACOS
+	return pthread_mach_thread_np(pthread_self());
 #else
 	return pthread_self();
 #endif

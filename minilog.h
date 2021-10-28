@@ -33,4 +33,5 @@ namespace minilog
 	bool initialize(const LogConfig& cfg);
 	void deinitialize();
 	void log(eLogLevel level, const char* format, ...);
+	void setCurrentThreadName(const char* name);
 } // namespace minilog

@@ -31,6 +31,8 @@ SOFTWARE.
 #include <stdio.h>
 #include <time.h>
 
+#include <mutex>
+
 #if defined(_WIN32) || defined(_WIN64)
 #	define OS_WINDOWS	1
 #endif
@@ -43,12 +45,20 @@ SOFTWARE.
 #	include <windows.h>
 #else
 #	include <sys/time.h>
+#	include <pthread.h>
 #endif
 
 namespace {
 	minilog::LogConfig config = {};
 	FILE* logFile = nullptr;
+	std::mutex logMutex;
 } // namespace
+
+struct ThreadLogContext
+{
+	uint64_t threadId = 0;
+	const char* threadName = nullptr;
+};
 
 bool minilog::initialize(const minilog::LogConfig& cfg)
 {
@@ -85,6 +95,25 @@ void minilog::deinitialize()
 	logFile = nullptr;
 }
 
+static uint64_t getCurrentThreadHandle()
+{
+#if OS_WINDOWS
+	return GetCurrentThreadId();
+#else
+	return pthread_self();
+#endif
+}
+
+static ThreadLogContext* getThreadContext()
+{
+	static thread_local ThreadLogContext ctx;
+
+	if (!ctx.threadId)
+		ctx.threadId = getCurrentThreadHandle();
+
+	return &ctx;
+}
+
 static uint32_t getCurrentMilliseconds()
 {
 #if OS_WINDOWS
@@ -109,15 +138,25 @@ static uint32_t writeTimeStamp(char* buffer, uint32_t maxLength)
 	return n > 0 ? n : 0;
 }
 
-static void writeMessageToLog(const char* msg)
+static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
 {
 	if (!logFile)
 		return;
 
-	fprintf(logFile, "%s\n", msg);
+	if (ctx->threadName)
+		fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
+	else
+		fprintf(logFile, "(%llu):%s\n", ctx->threadId, msg);
 
 	if (config.forceFlush)
 		fflush(logFile);
+}
+
+void minilog::setCurrentThreadName(const char* name)
+{
+	ThreadLogContext* ctx = getThreadContext();
+
+	ctx->threadName = name;
 }
 
 void minilog::log(eLogLevel level, const char* format, ...)
@@ -139,7 +178,11 @@ void minilog::log(eLogLevel level, const char* format, ...)
 	vsnprintf(buffer + tsLength, kBufferLength - tsLength, format, args);
 	va_end(args);
 
-	writeMessageToLog(buffer);
+	std::lock_guard<std::mutex> lock(logMutex);
+
+	const ThreadLogContext* ctx = getThreadContext();
+
+	writeMessageToLog(buffer, ctx);
 
 	if (level >= config.logLevelPrintToConsole)
 	{
@@ -164,7 +207,10 @@ void minilog::log(eLogLevel level, const char* format, ...)
 #endif // OS_WINDOWS
 		}
 
-		printf("%s\n", buffer);
+		if (ctx->threadName)
+			printf("(%s):%s\n", ctx->threadName, buffer);
+		else
+			printf("(%llu):%s\n", ctx->threadId, buffer);
 
 		if (config.coloredConsole)
 		{

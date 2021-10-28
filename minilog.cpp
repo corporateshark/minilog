@@ -204,6 +204,13 @@ void minilog::setCurrentThreadName(const char* name)
 	ctx->threadName = name;
 }
 
+const char* minilog::getCurrentThreadName()
+{
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	return ctx->threadName ? ctx->threadName : "";
+}
+
 void minilog::log(eLogLevel level, const char* format, ...)
 {
 	va_list args;
@@ -302,7 +309,7 @@ void minilog::logRaw(eLogLevel level, const char* format, va_list args)
 	writeMessageToLog(buffer, ctx);
 }
 
-bool minilog::pushProc(const char* name)
+bool minilog::callstackPushProc(const char* name)
 {
 	ThreadLogContext* ctx = getThreadLogContext();
 
@@ -315,7 +322,7 @@ bool minilog::pushProc(const char* name)
 	return ctx->procsNestingLevel < kMaxProcsNesting;
 }
 
-void minilog::popProc()
+void minilog::callstackPopProc()
 {
 	ThreadLogContext* ctx = getThreadLogContext();
 
@@ -325,4 +332,18 @@ void minilog::popProc()
 		log(Debug, "<-");
 
 	ctx->procsNestingLevel--;
+}
+
+unsigned int minilog::callstackGetNumProcs()
+{
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	return ctx->procsNestingLevel;
+}
+
+const char* minilog::callstackGetProc(unsigned int i)
+{
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	return ctx->procs[i];
 }

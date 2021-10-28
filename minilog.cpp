@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "minilog.h"
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -66,10 +67,16 @@ namespace {
 	std::mutex logMutex;
 } // namespace
 
+static constexpr uint32_t kMaxProcsNesting = 128;
+
 struct ThreadLogContext
 {
 	uint64_t threadId = 0;
 	const char* threadName = nullptr;
+	// callstack
+	const char* procs[kMaxProcsNesting];
+	uint32_t procsNestingLevel = 0;
+	bool hasLogsOnThisLevel[kMaxProcsNesting] = { false };
 };
 
 bool minilog::initialize(const minilog::LogConfig& cfg)
@@ -120,7 +127,7 @@ static uint64_t getCurrentThreadHandle()
 #endif
 }
 
-static ThreadLogContext* getThreadContext()
+static ThreadLogContext* getThreadLogContext()
 {
 	static thread_local ThreadLogContext ctx;
 
@@ -143,15 +150,30 @@ static uint32_t getCurrentMilliseconds()
 #endif
 }
 
-static uint32_t writeTimeStamp(char* buffer, uint32_t maxLength)
+static char* writeTimeStamp(char* buffer, const char* bufferEnd)
 {
 	time_t tempTime;
 	time(&tempTime);
 	::tm tmTime = *localtime(&tempTime);
 
-	const int n = snprintf(buffer, maxLength, "%02d:%02d:%02d.%03d   ", tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, getCurrentMilliseconds());
+	const int n = snprintf(buffer, uint32_t(bufferEnd-buffer), "%02d:%02d:%02d.%03d   ", tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, getCurrentMilliseconds());
 
-	return n > 0 ? n : 0;
+	return buffer + n;
+}
+
+static char* writeCurrentProcsNesting(char* buffer, const char* bufferEnd)
+{
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	for (int i = 0; i != ctx->procsNestingLevel; i++)
+	{
+		const size_t len = strlen(ctx->procs[i]);
+		if (buffer + len >= bufferEnd)
+			break;
+		strncpy(buffer, ctx->procs[i], len);
+		buffer += len;
+	}
+	return buffer;
 }
 
 static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
@@ -177,7 +199,7 @@ static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
 
 void minilog::setCurrentThreadName(const char* name)
 {
-	ThreadLogContext* ctx = getThreadContext();
+	ThreadLogContext* ctx = getThreadLogContext();
 
 	ctx->threadName = name;
 }
@@ -190,20 +212,22 @@ void minilog::log(eLogLevel level, const char* format, ...)
 	constexpr uint32_t kBufferLength = 8192;
 
 	char buffer[kBufferLength];
+	const char* bufferEnd = buffer + kBufferLength - 1;
 
-	const uint32_t tsLength = writeTimeStamp(buffer, kBufferLength);
-
-	if (tsLength >= kBufferLength)
-		return;
+	char* scratchBuf = writeTimeStamp(buffer, bufferEnd);
+	scratchBuf = writeCurrentProcsNesting(scratchBuf, bufferEnd);
 
 	va_list args;
 	va_start(args, format);
-	vsnprintf(buffer + tsLength, kBufferLength - tsLength, format, args);
+	vsnprintf(scratchBuf, uint32_t(bufferEnd - scratchBuf), format, args);
 	va_end(args);
 
 	std::lock_guard<std::mutex> lock(logMutex);
 
-	const ThreadLogContext* ctx = getThreadContext();
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	if (ctx->procsNestingLevel > 0)
+		ctx->hasLogsOnThisLevel[ctx->procsNestingLevel] = true;
 
 	writeMessageToLog(buffer, ctx);
 
@@ -245,4 +269,26 @@ void minilog::log(eLogLevel level, const char* format, ...)
 #endif // OS_WINDOWS
 		}
 	}
+}
+
+void minilog::pushProc(const char* name)
+{
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	ctx->procs[ ctx->procsNestingLevel ] = name;
+	ctx->hasLogsOnThisLevel[ ctx->procsNestingLevel ] = false;
+	ctx->procsNestingLevel++;
+	assert(ctx->procsNestingLevel < kMaxProcsNesting);
+}
+
+void minilog::popProc()
+{
+	ThreadLogContext* ctx = getThreadLogContext();
+
+	if (ctx->hasLogsOnThisLevel[ctx->procsNestingLevel])
+	{
+		log(Debug, "<-");
+	}
+
+	ctx->procsNestingLevel--;
 }

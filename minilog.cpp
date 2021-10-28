@@ -89,7 +89,7 @@ bool minilog::initialize(const minilog::LogConfig& cfg)
 	if (!logFile)
 		return false;
 
-	setCurrentThreadName(cfg.mainThreadName);
+	minilog::threadNameSet(cfg.mainThreadName);
 
 	config = cfg;
 
@@ -197,14 +197,14 @@ static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
 		fflush(logFile);
 }
 
-void minilog::setCurrentThreadName(const char* name)
+void minilog::threadNameSet(const char* name)
 {
 	ThreadLogContext* ctx = getThreadLogContext();
 
 	ctx->threadName = name;
 }
 
-const char* minilog::getCurrentThreadName()
+const char* minilog::threadNameGet()
 {
 	ThreadLogContext* ctx = getThreadLogContext();
 

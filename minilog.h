@@ -39,8 +39,8 @@ namespace minilog
 	void log(eLogLevel level, const char* format, va_list args);
 	void logRaw(eLogLevel level, const char* format, ...);
 	void logRaw(eLogLevel level, const char* format, va_list args);
-	void setCurrentThreadName(const char* name);
-	const char* getCurrentThreadName();
+	void threadNameSet(const char* name);
+	const char* threadNameGet();
 	bool callstackPushProc(const char* name);
 	void callstackPopProc();
 	unsigned int callstackGetNumProcs();

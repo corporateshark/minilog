@@ -79,6 +79,39 @@ struct ThreadLogContext
 	bool hasLogsOnThisLevel[kMaxProcsNesting] = { false };
 };
 
+static void writeHTMLIntro(const char* pageTitle)
+{
+	if (!logFile)
+		return;
+
+	const char* header =
+		"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1251\" /><title>%s</title>"
+		"<style type=\"text/css\">"
+		"body{background-color: #061920;padding: 0px;}"
+		"h1{font-size: 18pt; font-family: Arial; color: #C9D6D6;margin: 20px;}"
+		"h2{font-size: 10pt; font-family: Arial; color: #C9D6D6;margin: 0px;padding-top: 10px;}"
+
+		"#l1{background-color: #39464C;font-size: 10pt; font-family: Arial; color: white;padding-left: 5px;margin-bottom: 1px;}"
+		"#l2{background-color: #39464C;font-size: 10pt; font-family: Arial; color: #AAAAAA;padding-left: 5px;margin-bottom: 1px;}"
+		"#p1{background-color: #A68600;font-size: 11pt;font-weight: bold;font-family: Arial; color: white;padding-left: 15px;margin-bottom: 1px;}"
+		"#p2{background-color: #A68600;font-size: 11pt;font-weight: bold;font-family: Arial; color: #AAAAAA;padding-left: 15px;margin-bottom: 1px;}"
+		"#w1{background-color: maroon;font-size: 11pt;font-weight: bold;font-family: Arial; color: white;padding-left: 15px;margin-bottom: 1px;}"
+		"#w2{background-color: maroon;font-size: 11pt;font-weight: bold;font-family: Arial; color: #AAAAAA;padding-left: 15px;margin-bottom: 1px;}"
+
+		"</style></head>\n";
+
+	fprintf(logFile, header, pageTitle);
+	fprintf(logFile, "<body><h1>%s</h1>\n", pageTitle);
+}
+
+static void writeHTMLOutro()
+{
+	if (!logFile)
+		return;
+
+	fprintf(logFile, "</body></html>\n");
+}
+
 bool minilog::initialize(const minilog::LogConfig& cfg)
 {
 	if (logFile)
@@ -93,7 +126,10 @@ bool minilog::initialize(const minilog::LogConfig& cfg)
 
 	config = cfg;
 
-	if (config.writeIntro)
+	if (cfg.htmlLog)
+		writeHTMLIntro(cfg.htmlPageTitle);
+
+	if (cfg.writeIntro)
 	{
 		log(minilog::Log, "minilog: initializing ...");
 		log(minilog::Log, "minilog: log file: %s", cfg.fileName);
@@ -109,6 +145,9 @@ void minilog::deinitialize()
 
 	if (config.writeOutro)
 		log(minilog::Log, "minilog: deinitializing...");
+
+	if (config.htmlLog)
+		writeHTMLOutro();
 
 	fflush(logFile);
 	fclose(logFile);
@@ -176,7 +215,21 @@ static char* writeCurrentProcsNesting(char* buffer, const char* bufferEnd)
 	return buffer;
 }
 
-static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
+static const char* HTMLPrefix[] =
+{
+	"<div id=\"p1\">", // Paranoid
+	"<div id=\"p2\">", // Paranoid
+	"<div id=\"l1\">", // Debug
+	"<div id=\"l2\">", // Debug
+	"<div id=\"l1\">", // Log
+	"<div id=\"l2\">", // Log
+	"<div id=\"w1\">", // Warning
+	"<div id=\"w2\">", // Warning
+	"<div id=\"w1\">", // FatalError
+	"<div id=\"w2\">"  // FatalError
+};
+
+static void writeMessageToLog(minilog::eLogLevel level, const char* msg, const ThreadLogContext* ctx)
 {
 #if OS_ANDROID
 	if (ctx->threadName)
@@ -189,9 +242,18 @@ static void writeMessageToLog(const char* msg, const ThreadLogContext* ctx)
 		return;
 
 	if (ctx->threadName)
-		fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
+		if (config.htmlLog)
+		{
+			const int threadID = strcmp(ctx->threadName, config.mainThreadName) ? 1 : 0;
+			fprintf(logFile, "%s(%s):%s</div>\n", HTMLPrefix[2 * level + threadID], ctx->threadName, msg);
+		}
+		else
+			fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
 	else
-		fprintf(logFile, "(%llu):%s\n", (unsigned long long)ctx->threadId, msg);
+		if (config.htmlLog)
+			fprintf(logFile, "%s(%llu):%s</div>\n", HTMLPrefix[2 * level], (unsigned long long)ctx->threadId, msg);
+		else
+			fprintf(logFile, "(%llu):%s\n", (unsigned long long)ctx->threadId, msg);
 
 	if (config.forceFlush)
 		fflush(logFile);
@@ -241,7 +303,7 @@ void minilog::log(eLogLevel level, const char* format, va_list args)
 	if (ctx->procsNestingLevel > 0)
 		ctx->hasLogsOnThisLevel[ctx->procsNestingLevel] = true;
 
-	writeMessageToLog(buffer, ctx);
+	writeMessageToLog(level, buffer, ctx);
 
 	if (level >= config.logLevelPrintToConsole)
 	{
@@ -306,7 +368,7 @@ void minilog::logRaw(eLogLevel level, const char* format, va_list args)
 	if (ctx->procsNestingLevel > 0)
 		ctx->hasLogsOnThisLevel[ctx->procsNestingLevel] = true;
 
-	writeMessageToLog(buffer, ctx);
+	writeMessageToLog(level, buffer, ctx);
 }
 
 bool minilog::callstackPushProc(const char* name)

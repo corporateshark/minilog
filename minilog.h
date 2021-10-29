@@ -30,6 +30,8 @@ namespace minilog
 		bool writeIntro = true;
 		bool writeOutro = true;
 		bool coloredConsole = true;
+		bool htmlLog = false;
+		const char* htmlPageTitle = "Minilog";
 		const char* mainThreadName = "MainThread";
 	};
 

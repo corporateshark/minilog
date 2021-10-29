@@ -23,7 +23,6 @@ namespace minilog
 
 	struct LogConfig
 	{
-		const char* fileName = "";
 		eLogLevel logLevel = minilog::Debug;
 		eLogLevel logLevelPrintToConsole = minilog::Log;
 		bool forceFlush = true;
@@ -35,16 +34,28 @@ namespace minilog
 		const char* mainThreadName = "MainThread";
 	};
 
-	bool initialize(const LogConfig& cfg);
+	bool initialize(const char* fileName, const LogConfig& cfg);
 	void deinitialize();
+
 	void log(eLogLevel level, const char* format, ...);
 	void log(eLogLevel level, const char* format, va_list args);
 	void logRaw(eLogLevel level, const char* format, ...);
 	void logRaw(eLogLevel level, const char* format, va_list args);
+
 	void threadNameSet(const char* name);
 	const char* threadNameGet();
+
 	bool callstackPushProc(const char* name);
 	void callstackPopProc();
 	unsigned int callstackGetNumProcs();
 	const char* callstackGetProc(unsigned int i);
+
+	struct LogCallback
+	{
+		typedef void (*callback_t)(void*, const char*);
+		callback_t funcs[minilog::FatalError + 1] = {};
+		void* userData = nullptr;
+	};
+	bool callbackAdd(const LogCallback& cb);
+	void callbackRemove(void* userData);
 } // namespace minilog

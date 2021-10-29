@@ -61,13 +61,16 @@ SOFTWARE.
 #	include <android/log.h>
 #endif
 
+static constexpr uint32_t kMaxProcsNesting = 128;
+static constexpr uint32_t kMaxCallbacks = 128;
+
 namespace {
 	minilog::LogConfig config = {};
 	FILE* logFile = nullptr;
 	std::mutex logMutex;
+	minilog::LogCallback callbacks[kMaxCallbacks];
+	uint32_t callbacksNum = 0;
 } // namespace
-
-static constexpr uint32_t kMaxProcsNesting = 128;
 
 struct ThreadLogContext
 {
@@ -78,6 +81,15 @@ struct ThreadLogContext
 	uint32_t procsNestingLevel = 0;
 	bool hasLogsOnThisLevel[kMaxProcsNesting] = { false };
 };
+
+static void invokeCallbacks(minilog::eLogLevel level, const char* msg)
+{
+	for (uint32_t i = 0; i != callbacksNum; i++)
+	{
+		if (callbacks[i].funcs[level])
+			callbacks[i].funcs[level](callbacks[i].userData, msg);
+	}
+}
 
 static void writeHTMLIntro(const char* pageTitle)
 {
@@ -112,12 +124,12 @@ static void writeHTMLOutro()
 	fprintf(logFile, "</body></html>\n");
 }
 
-bool minilog::initialize(const minilog::LogConfig& cfg)
+bool minilog::initialize(const char* fileName, const minilog::LogConfig& cfg)
 {
 	if (logFile)
 		deinitialize();
 
-	logFile = fopen(cfg.fileName, "w");
+	logFile = fopen(fileName, "w");
 
 	if (!logFile)
 		return false;
@@ -132,7 +144,7 @@ bool minilog::initialize(const minilog::LogConfig& cfg)
 	if (cfg.writeIntro)
 	{
 		log(minilog::Log, "minilog: initializing ...");
-		log(minilog::Log, "minilog: log file: %s", cfg.fileName);
+		log(minilog::Log, "minilog: log file: %s", fileName);
 	}
 
 	return true;
@@ -293,6 +305,7 @@ void minilog::log(eLogLevel level, const char* format, va_list args)
 
 	char* scratchBuf = writeTimeStamp(buffer, bufferEnd);
 	scratchBuf = writeCurrentProcsNesting(scratchBuf, bufferEnd);
+	const char* msg = scratchBuf; // store where the actual message starts
 
 	vsnprintf(scratchBuf, uint32_t(bufferEnd - scratchBuf), format, args);
 
@@ -343,6 +356,8 @@ void minilog::log(eLogLevel level, const char* format, va_list args)
 #endif // OS_WINDOWS
 		}
 	}
+
+	invokeCallbacks(level, msg);
 }
 
 void minilog::logRaw(eLogLevel level, const char* format, ...)
@@ -408,4 +423,27 @@ const char* minilog::callstackGetProc(unsigned int i)
 	ThreadLogContext* ctx = getThreadLogContext();
 
 	return ctx->procs[i];
+}
+
+bool minilog::callbackAdd(const LogCallback& cb)
+{
+	if (callbacksNum >= kMaxCallbacks)
+		return false;
+
+	callbacks[callbacksNum++] = cb;
+
+	return true;
+}
+
+void minilog::callbackRemove(void* userData)
+{
+	for (uint32_t i = 0; i != callbacksNum; i++)
+	{
+		if (callbacks[i].userData == userData)
+		{
+			callbacks[i] = callbacks[callbacksNum - 1];
+			callbacksNum--;
+			return;
+		}
+	}
 }

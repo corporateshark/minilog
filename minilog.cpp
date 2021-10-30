@@ -227,7 +227,7 @@ static char* writeCurrentProcsNesting(char* buffer, const char* bufferEnd)
 	return buffer;
 }
 
-static const char* HTMLPrefix[] =
+static const char* kHTMLPrefix[] =
 {
 	"<div id=\"p1\">", // Paranoid
 	"<div id=\"p2\">", // Paranoid
@@ -257,13 +257,13 @@ static void writeMessageToLog(minilog::eLogLevel level, const char* msg, const T
 		if (config.htmlLog)
 		{
 			const int threadID = strcmp(ctx->threadName, config.mainThreadName) ? 1 : 0;
-			fprintf(logFile, "%s(%s):%s</div>\n", HTMLPrefix[2 * level + threadID], ctx->threadName, msg);
+			fprintf(logFile, "%s(%s):%s</div>\n", kHTMLPrefix[2 * level + threadID], ctx->threadName, msg);
 		}
 		else
 			fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
 	else
 		if (config.htmlLog)
-			fprintf(logFile, "%s(%llu):%s</div>\n", HTMLPrefix[2 * level], (unsigned long long)ctx->threadId, msg);
+			fprintf(logFile, "%s(%llu):%s</div>\n", kHTMLPrefix[2 * level], (unsigned long long)ctx->threadId, msg);
 		else
 			fprintf(logFile, "(%llu):%s\n", (unsigned long long)ctx->threadId, msg);
 
@@ -447,3 +447,26 @@ void minilog::callbackRemove(void* userData)
 		}
 	}
 }
+
+minilog::CallstackScope::CallstackScope(const char* funcName, const char* format, ...)
+{
+	char argsBuf[kBufferSize];
+
+	va_list p;
+	va_start(p, format);
+	vsnprintf(argsBuf, kBufferSize-1, format, p);
+	va_end(p);
+	snprintf(buffer_, kBufferSize-1, "%s(%s)->", funcName, argsBuf);
+
+	minilog::callstackPushProc(buffer_);
+}
+
+minilog::CallstackScope::CallstackScope(const char* funcName)
+{
+#if defined(__GNUC__) || defined(__clang__)
+	snprintf(buffer_, kBufferSize-1, "%s->", funcName);
+#else
+	snprintf(buffer_, kBufferSize-1, "%s()->", funcName);
+#endif
+	minilog::callstackPushProc(buffer_);
+};

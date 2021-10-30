@@ -25,11 +25,11 @@ namespace minilog
 	{
 		eLogLevel logLevel = minilog::Debug;
 		eLogLevel logLevelPrintToConsole = minilog::Log;
-		bool forceFlush = true;
+		bool forceFlush = true;                           // call fflush() after every log() and logRaw()
 		bool writeIntro = true;
 		bool writeOutro = true;
-		bool coloredConsole = true;
-		bool htmlLog = false;
+		bool coloredConsole = true;                       // apply colors to console output (Windows, escape sequences)
+		bool htmlLog = false;                             // output everything as HTML instead of plain text
 		const char* htmlPageTitle = "Minilog";
 		const char* mainThreadName = "MainThread";
 	};
@@ -50,6 +50,7 @@ namespace minilog
 	unsigned int callstackGetNumProcs();
 	const char* callstackGetProc(unsigned int i);
 
+	/// set up custom callbacks
 	struct LogCallback
 	{
 		typedef void (*callback_t)(void*, const char*);
@@ -58,4 +59,19 @@ namespace minilog
 	};
 	bool callbackAdd(const LogCallback& cb);
 	void callbackRemove(void* userData);
+
+	/// RAII wrapper around callstackPushProc() and callstackPopProc()
+	class CallstackScope
+	{
+		enum { kBufferSize = 256 };
+	public:
+		explicit CallstackScope(const char* funcName);
+		explicit CallstackScope(const char* funcName, const char* format, ...);
+		inline ~CallstackScope()
+		{
+			minilog::callstackPopProc();
+		}
+	private:
+		char buffer_[kBufferSize];
+	};
 } // namespace minilog

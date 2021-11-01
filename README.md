@@ -56,3 +56,17 @@ HTML output:
 ![image](https://user-images.githubusercontent.com/2510143/139718798-5536413a-72ff-49c0-a262-1c1bb844a260.png)
 
 You can also use the `CallstackScope` class to manage your callstack in RAII-style.
+
+## Intercept formatted messages
+
+If you have a `GameConsole` class which can display messages within your in-game UI, you can intercept logs the following way:
+
+```
+minilog::LogCallback cb = { .userData = this };
+cb.funcs[minilog::Log] = [](void* data, const char* msg) { reinterpret_cast<GameConsole*>(data)->Display(msg); };
+cb.funcs[minilog::Warning] = [](void* data, const char* msg) { reinterpret_cast<GameConsole*>(data)->DisplayError(msg); };
+cb.funcs[minilog::FatalError] = [](void* data, const char* msg) { reinterpret_cast<GameConsole*>(data)->DisplayError(msg); };
+minilog::callbackAdd(cb);
+```
+
+All callback invocations are guarded by a mutex and will not happen concurrently (but may be invoked from multiple threads).

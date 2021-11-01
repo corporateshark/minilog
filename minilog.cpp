@@ -24,6 +24,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(_CRT_SECURE_NO_WARNINGS)
+#	define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #include "minilog.h"
 
 #include <assert.h>

@@ -23,32 +23,32 @@ namespace minilog
 
 	struct LogConfig
 	{
-		eLogLevel logLevel = minilog::Debug;
-		eLogLevel logLevelPrintToConsole = minilog::Log;
+		eLogLevel logLevel = minilog::Debug;              // everything >= this level goes to the log file
+		eLogLevel logLevelPrintToConsole = minilog::Log;  // everything >= this level is printed to the console (cannot be lower than logLevel)
 		bool forceFlush = true;                           // call fflush() after every log() and logRaw()
 		bool writeIntro = true;
 		bool writeOutro = true;
 		bool coloredConsole = true;                       // apply colors to console output (Windows, escape sequences)
 		bool htmlLog = false;                             // output everything as HTML instead of plain text
-		const char* htmlPageTitle = "Minilog";
-		const char* mainThreadName = "MainThread";
+		const char* htmlPageTitle = "Minilog";            // just the title of the resulting HTML page
+		const char* mainThreadName = "MainThread";        // just the name of the thread which calls minilog::initialize()
 	};
 
-	bool initialize(const char* fileName, const LogConfig& cfg);
-	void deinitialize();
+	bool initialize(const char* fileName, const LogConfig& cfg); // non-thread-safe
+	void deinitialize();                                         // non-thread-safe
 
-	void log(eLogLevel level, const char* format, ...);
-	void log(eLogLevel level, const char* format, va_list args);
-	void logRaw(eLogLevel level, const char* format, ...);
-	void logRaw(eLogLevel level, const char* format, va_list args);
+	void log(eLogLevel level, const char* format, ...);             // thread-safe
+	void log(eLogLevel level, const char* format, va_list args);    // thread-safe
+	void logRaw(eLogLevel level, const char* format, ...);          // thread-safe
+	void logRaw(eLogLevel level, const char* format, va_list args); // thread-safe
 
-	void threadNameSet(const char* name);
-	const char* threadNameGet();
+	void threadNameSet(const char* name); // thread-safe
+	const char* threadNameGet();          // thread-safe
 
-	bool callstackPushProc(const char* name);
-	void callstackPopProc();
-	unsigned int callstackGetNumProcs();
-	const char* callstackGetProc(unsigned int i);
+	bool callstackPushProc(const char* name);     // thread-safe
+	void callstackPopProc();                      // thread-safe
+	unsigned int callstackGetNumProcs();          // thread-safe
+	const char* callstackGetProc(unsigned int i); // thread-safe
 
 	/// set up custom callbacks
 	struct LogCallback
@@ -57,8 +57,8 @@ namespace minilog
 		callback_t funcs[minilog::FatalError + 1] = {};
 		void* userData = nullptr;
 	};
-	bool callbackAdd(const LogCallback& cb);
-	void callbackRemove(void* userData);
+	bool callbackAdd(const LogCallback& cb); // non-thread-safe
+	void callbackRemove(void* userData);     // non-thread-safe
 
 	/// RAII wrapper around callstackPushProc() and callstackPopProc()
 	class CallstackScope

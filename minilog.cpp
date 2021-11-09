@@ -39,6 +39,15 @@ SOFTWARE.
 
 #include <mutex>
 
+#if !defined(MINILOG_ENABLE_VA_LIST)
+// forward declaractions
+namespace minilog
+{
+	void log(eLogLevel level, const char* format, va_list args);
+	void logRaw(eLogLevel level, const char* format, va_list args);
+} // namespace
+#endif // MINILOG_ENABLE_VA_LIST
+
 #if defined(_WIN32) || defined(_WIN64)
 #	define OS_WINDOWS	1
 #endif

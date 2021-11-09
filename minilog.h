@@ -8,7 +8,9 @@ MIT License
 Copyright (c) 2021 Sergey Kosarevsky
 **/
 
-#include <stdarg.h>
+#if defined(MINILOG_ENABLE_VA_LIST)
+#	include <stdarg.h>
+#endif // MINILOG_ENABLE_VA_LIST
 
 namespace minilog
 {
@@ -38,9 +40,11 @@ namespace minilog
 	void deinitialize();                                         // non-thread-safe
 
 	void log(eLogLevel level, const char* format, ...);             // thread-safe
-	void log(eLogLevel level, const char* format, va_list args);    // thread-safe
 	void logRaw(eLogLevel level, const char* format, ...);          // thread-safe
+#if defined(MINILOG_ENABLE_VA_LIST)
+	void log(eLogLevel level, const char* format, va_list args);    // thread-safe
 	void logRaw(eLogLevel level, const char* format, va_list args); // thread-safe
+#endif // MINILOG_ENABLE_VA_LIST
 
 	void threadNameSet(const char* name); // thread-safe
 	const char* threadNameGet();          // thread-safe

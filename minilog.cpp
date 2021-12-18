@@ -105,12 +105,12 @@ static void invokeCallbacks(minilog::eLogLevel level, const char* msg)
 	}
 }
 
-static void writeHTMLIntro(const char* pageTitle)
+static void writeHTMLIntro(const char* pageTitle, const char* customHeader)
 {
 	if (!logFile)
 		return;
 
-	const char* header =
+	const char* header = customHeader ? customHeader :
 		"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><title>%s</title>"
 		"<style type=\"text/css\">"
 		"body{background-color: #061920;padding: 0px;}"
@@ -130,12 +130,15 @@ static void writeHTMLIntro(const char* pageTitle)
 	fprintf(logFile, "<body><h1>%s</h1>\n", pageTitle);
 }
 
-static void writeHTMLOutro()
+static void writeHTMLOutro(const char* customFooter)
 {
 	if (!logFile)
 		return;
 
-	fprintf(logFile, "</body></html>\n");
+	const char* footer = customFooter ? customFooter :
+		"</body></html>\n";
+
+	fprintf(logFile, footer);
 }
 
 bool minilog::initialize(const char* fileName, const minilog::LogConfig& cfg)
@@ -153,7 +156,7 @@ bool minilog::initialize(const char* fileName, const minilog::LogConfig& cfg)
 	config = cfg;
 
 	if (cfg.htmlLog)
-		writeHTMLIntro(cfg.htmlPageTitle);
+		writeHTMLIntro(cfg.htmlPageTitle, cfg.htmlPageHeader);
 
 	if (cfg.writeIntro)
 	{
@@ -173,7 +176,7 @@ void minilog::deinitialize()
 		log(minilog::Log, "minilog: deinitializing...");
 
 	if (config.htmlLog)
-		writeHTMLOutro();
+		writeHTMLOutro(config.htmlPageFooter);
 
 	fflush(logFile);
 	fclose(logFile);

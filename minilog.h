@@ -1,11 +1,10 @@
 ﻿#pragma once
 
 /**
-minilog
+	minilog v1.0.1
 
-MIT License
-
-Copyright (c) 2021 Sergey Kosarevsky
+	MIT License
+	Copyright (c) 2021 Sergey Kosarevsky
 **/
 
 #if defined(MINILOG_ENABLE_VA_LIST)
@@ -30,6 +29,8 @@ namespace minilog
 		bool coloredConsole = true;                       // apply colors to console output (Windows, escape sequences)
 		bool htmlLog = false;                             // output everything as HTML instead of plain text
 		const char* htmlPageTitle = "Minilog";            // just the title of the resulting HTML page
+		const char* htmlPageHeader = nullptr;             // override default HTML header
+		const char* htmlPageFooter = nullptr;             // override default HTML footer
 		const char* mainThreadName = "MainThread";        // just the name of the thread which calls minilog::initialize()
 	};
 
@@ -43,9 +44,11 @@ namespace minilog
 	void logRaw(eLogLevel level, const char* format, va_list args); // thread-safe
 #endif // MINILOG_ENABLE_VA_LIST
 
+	/// threads management
 	void threadNameSet(const char* name); // thread-safe
 	const char* threadNameGet();          // thread-safe
 
+	/// callstack management
 	bool callstackPushProc(const char* name);     // thread-safe
 	void callstackPopProc();                      // thread-safe
 	unsigned int callstackGetNumProcs();          // thread-safe

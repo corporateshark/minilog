@@ -111,7 +111,7 @@ static void writeHTMLIntro(const char* pageTitle)
 		return;
 
 	const char* header =
-		"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1251\" /><title>%s</title>"
+		"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><title>%s</title>"
 		"<style type=\"text/css\">"
 		"body{background-color: #061920;padding: 0px;}"
 		"h1{font-size: 18pt; font-family: Arial; color: #C9D6D6;margin: 20px;}"

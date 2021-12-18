@@ -14,17 +14,14 @@ Copyright (c) 2021 Sergey Kosarevsky
 
 namespace minilog
 {
-	enum eLogLevel
-	{
+	enum eLogLevel {
 		Paranoid    = 0,
 		Debug       = 1,
 		Log         = 2,
 		Warning     = 3,
 		FatalError  = 4
 	};
-
-	struct LogConfig
-	{
+	struct LogConfig {
 		eLogLevel logLevel = minilog::Debug;              // everything >= this level goes to the log file
 		eLogLevel logLevelPrintToConsole = minilog::Log;  // everything >= this level is printed to the console (cannot be lower than logLevel)
 		bool forceFlush = true;                           // call fflush() after every log() and logRaw()
@@ -55,8 +52,7 @@ namespace minilog
 	const char* callstackGetProc(unsigned int i); // thread-safe
 
 	/// set up custom callbacks
-	struct LogCallback
-	{
+	struct LogCallback {
 		typedef void (*callback_t)(void*, const char*);
 		callback_t funcs[minilog::FatalError + 1] = {};
 		void* userData = nullptr;
@@ -65,16 +61,12 @@ namespace minilog
 	void callbackRemove(void* userData);     // non-thread-safe
 
 	/// RAII wrapper around callstackPushProc() and callstackPopProc()
-	class CallstackScope
-	{
+	class CallstackScope {
 		enum { kBufferSize = 256 };
 	public:
 		explicit CallstackScope(const char* funcName);
 		explicit CallstackScope(const char* funcName, const char* format, ...);
-		inline ~CallstackScope()
-		{
-			minilog::callstackPopProc();
-		}
+		inline ~CallstackScope() { minilog::callstackPopProc(); }
 	private:
 		char buffer_[kBufferSize];
 	};

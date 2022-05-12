@@ -69,12 +69,51 @@ void testCallstack()
 	minilog::deinitialize();
 }
 
+void testCallstackMacros()
+{
+	minilog::initialize("log_callstack_macros.txt", {});
+
+	const unsigned int i = 32167;
+
+	{
+		minilog::CallstackScope scope(FUNC_NAME);
+
+		LLOGL("Hello world!");
+		LLOGW("Warning!!! i = %u", i);
+	}
+
+	minilog::deinitialize();
+}
+
+void testCallbacks()
+{
+	minilog::initialize("log_callbacks.txt", {});
+
+	// intercept formatted messages
+	minilog::LogCallback cb = { .userData = nullptr };
+	cb.funcs[minilog::Warning] = [](void* userData, const char* msg) { printf(">>> CALLBACK Warning: %s\n", msg); };
+	minilog::callbackAdd(cb);
+
+	const unsigned int i = 32167;
+
+	{
+		minilog::CallstackScope scope(FUNC_NAME);
+
+		LLOGL("Hello world!");
+		LLOGW("Warning!!! i = %u", i);
+	}
+
+	minilog::deinitialize();
+}
+
 int main()
 {
 	testTXT();
 	testHTML();
 	testThread();
 	testCallstack();
+	testCallstackMacros();
+	testCallbacks();
 
 	return 0;
 }

@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 /**
-	minilog v1.0.1
+	minilog v1.0.2
 
 	MIT License
-	Copyright (c) 2021 Sergey Kosarevsky
+	Copyright (c) 2021-2022 Sergey Kosarevsky
 **/
 
 #if defined(MINILOG_ENABLE_VA_LIST)
@@ -74,3 +74,19 @@ namespace minilog
 		char buffer_[kBufferSize];
 	};
 } // namespace minilog
+
+#if !defined(MINILOG_DISABLE_HELPER_MACROS)
+
+#if defined(__GNUC__) && !defined(EMSCRIPTEN) && !defined(__clang__)
+#	define LLOGP(...) minilog::log(minilog::Paranoid, ##__VA_ARGS__)
+#	define LLOGD(...) minilog::log(minilog::Debug, ##__VA_ARGS__)
+#	define LLOGL(...) minilog::log(minilog::Log, ##__VA_ARGS__)
+#	define LLOGW(...) minilog::log(minilog::Warning, ##__VA_ARGS__)
+#else
+#	define LLOGP(...) minilog::log(minilog::Paranoid, ## __VA_ARGS__)
+#	define LLOGD(...) minilog::log(minilog::Debug, ## __VA_ARGS__)
+#	define LLOGL(...) minilog::log(minilog::Log, ## __VA_ARGS__)
+#	define LLOGW(...) minilog::log(minilog::Warning, ## __VA_ARGS__)
+#endif
+
+#endif // MINILOG_DISABLE_HELPER_MACROS

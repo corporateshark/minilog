@@ -138,7 +138,7 @@ static void writeHTMLOutro(const char* customFooter)
 	const char* footer = customFooter ? customFooter :
 		"</body></html>\n";
 
-	fprintf(logFile, footer);
+	fprintf(logFile, "%s", footer);
 }
 
 bool minilog::initialize(const char* fileName, const minilog::LogConfig& cfg)

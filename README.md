@@ -8,7 +8,7 @@ Minimalistic logging library with threads and manual callstacks.
 * Thread-safe (write to log from multiple threads, set thread names)
 * Cross-platform (Windows, Linux, OS X, Android)
 * Callbacks (if you want to intercept formatted log messages)
-* C++14
+* C++17
 
 ## Basic usage
 

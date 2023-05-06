@@ -146,10 +146,12 @@ bool minilog::initialize(const char* fileName, const minilog::LogConfig& cfg)
 	if (logFile)
 		deinitialize();
 
-	logFile = fopen(fileName, "w");
+	if (fileName) {
+		logFile = fopen(fileName, "w");
 
-	if (!logFile)
-		return false;
+		if (!logFile)
+			return false;
+	}
 
 	minilog::threadNameSet(cfg.mainThreadName);
 
@@ -158,8 +160,7 @@ bool minilog::initialize(const char* fileName, const minilog::LogConfig& cfg)
 	if (cfg.htmlLog)
 		writeHTMLIntro(cfg.htmlPageTitle, cfg.htmlPageHeader);
 
-	if (cfg.writeIntro)
-	{
+	if (cfg.writeIntro) {
 		log(minilog::Log, "minilog: initializing ...");
 		log(minilog::Log, "minilog: log file: %s", fileName);
 	}
@@ -302,6 +303,68 @@ const char* minilog::threadNameGet()
 	return ctx->threadName ? ctx->threadName : "";
 }
 
+static void printMessageToConsole(minilog::eLogLevel level, const char* msg, const ThreadLogContext* ctx)
+{
+	using namespace minilog;
+
+	if (level >= config.logLevelPrintToConsole) {
+		if (config.coloredConsole) {
+#if OS_WINDOWS
+			auto getAttr = [](minilog::eLogLevel level) -> WORD {
+				switch (level) {
+				case Paranoid:
+					return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+				case Debug:
+					return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+				case Log:
+					return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+				case Warning:
+					return FOREGROUND_RED | FOREGROUND_INTENSITY;
+				case FatalError:
+					return FOREGROUND_RED | FOREGROUND_INTENSITY;
+				}
+				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+			};
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), getAttr(level));
+#else
+			if (level >= Warning)
+				printf("\033[1;31m");
+#endif // OS_WINDOWS
+		}
+
+// clang-format off
+#if defined(MINILOG_RAW_OUTPUT)
+#	define FORMATSTR_THREAD_NAME "(%s):%s"
+#	define FORMATSTR_THREAD_ID   "(%llu):%s"
+#	define FORMATSTR_NO_THREAD   "%s"
+#else
+#	define FORMATSTR_THREAD_NAME "(%s):%s\n"
+#	define FORMATSTR_THREAD_ID   "(%llu):%s\n"
+#	define FORMATSTR_NO_THREAD   "%s\n"
+#endif
+// clang-format on
+
+		if (config.threadNames) {
+			if (ctx->threadName) {
+				printf(FORMATSTR_THREAD_NAME, ctx->threadName, msg);
+			} else {
+				printf(FORMATSTR_THREAD_ID, (unsigned long long)ctx->threadId, msg);
+			}
+		} else {
+			printf(FORMATSTR_NO_THREAD, msg);
+		}
+
+		if (config.coloredConsole) {
+#if OS_WINDOWS
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#else
+			if (level >= Warning)
+				printf("\033[0m");
+#endif // OS_WINDOWS
+		}
+	}
+}
+
 void minilog::log(eLogLevel level, const char* format, ...)
 {
 	va_list args;
@@ -334,45 +397,7 @@ void minilog::log(eLogLevel level, const char* format, va_list args)
 		ctx->hasLogsOnThisLevel[ctx->procsNestingLevel] = true;
 
 	writeMessageToLog(level, buffer, ctx);
-
-	if (level >= config.logLevelPrintToConsole)
-	{
-		if (config.coloredConsole)
-		{
-#if OS_WINDOWS
-			auto getAttr = [](minilog::eLogLevel level) -> WORD
-			{
-				switch (level) {
-					case Paranoid:   return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-					case Debug:      return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-					case Log:        return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-					case Warning:    return FOREGROUND_RED | FOREGROUND_INTENSITY;
-					case FatalError: return FOREGROUND_RED | FOREGROUND_INTENSITY;
-				}
-				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-			};
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), getAttr(level));
-#else
-			if (level >= Warning)
-				printf("\033[1;31m");
-#endif // OS_WINDOWS
-		}
-
-		if (ctx->threadName)
-			printf("(%s):%s\n", ctx->threadName, buffer);
-		else
-			printf("(%llu):%s\n", (unsigned long long)ctx->threadId, buffer);
-
-		if (config.coloredConsole)
-		{
-#if OS_WINDOWS
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-#else
-			if (level >= Warning)
-				printf("\033[0m");
-#endif // OS_WINDOWS
-		}
-	}
+	printMessageToConsole(level, buffer, ctx);
 
 	invokeCallbacks(level, msg);
 }
@@ -401,6 +426,10 @@ void minilog::logRaw(eLogLevel level, const char* format, va_list args)
 		ctx->hasLogsOnThisLevel[ctx->procsNestingLevel] = true;
 
 	writeMessageToLog(level, buffer, ctx);
+
+#if defined(MINILOG_RAW_OUTPUT)
+	printMessageToConsole(level, buffer, ctx);
+#endif // MINILOG_RAW_OUTPUT
 }
 
 bool minilog::callstackPushProc(const char* name)

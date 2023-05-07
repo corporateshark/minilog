@@ -28,7 +28,7 @@ Console output:
 
 ## HTML log + manual callstack + multiple threads
 
-All calls to `log()`, `callstackPushProc()`, `callstackPopProc()` are thread-safe.
+All calls to `log()`, `callstackPushProc()`, `callstackPopProc()` are thread-safe. Furthermore, callstacks are per thread.
 
 ```
 void testThread()
@@ -50,6 +50,8 @@ void testThread()
 	minilog::deinitialize();
 }
 ```
+
+If you want, you can use optional `LLOGL()`, `LLOGW()`, `LLOGD()` macros instead of calling `minilog::log()` directly.
 
 HTML output:
 

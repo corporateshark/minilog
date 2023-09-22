@@ -1,4 +1,4 @@
-﻿/**
+/**
 minilog
 
 MIT License
@@ -75,6 +75,10 @@ namespace minilog
 #	include <android/log.h>
 #endif
 
+#if OS_MACOS
+#	include <os/log.h>
+#endif
+
 static constexpr uint32_t kMaxProcsNesting = 128;
 static constexpr uint32_t kMaxCallbacks = 128;
 
@@ -95,6 +99,21 @@ struct ThreadLogContext
 	uint32_t procsNestingLevel = 0;
 	bool hasLogsOnThisLevel[kMaxProcsNesting] = { false };
 };
+
+#if OS_MACOS
+static os_log_type_t logLevelToOsLogType(minilog::eLogLevel level) 
+{
+	switch (level) 
+	{
+		case minilog::eLogLevel::Paranoid: return OS_LOG_TYPE_INFO;
+		case minilog::eLogLevel::Debug: return OS_LOG_TYPE_DEBUG;
+		case minilog::eLogLevel::Log: return OS_LOG_TYPE_DEFAULT;
+		case minilog::eLogLevel::Warning: return OS_LOG_TYPE_ERROR;
+		case minilog::eLogLevel::FatalError: return OS_LOG_TYPE_FAULT;
+	}
+	return OS_LOG_TYPE_DEFAULT;
+}
+#endif
 
 static void invokeCallbacks(minilog::eLogLevel level, const char* msg)
 {
@@ -326,6 +345,8 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
 				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 			};
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), getAttr(level));
+#elif OS_MACOS
+			// Do nothing. MacOS console does coloring itself.
 #else
 			if (level >= Warning)
 				printf("\033[1;31m");
@@ -344,19 +365,39 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
 #endif
 // clang-format on
 
-		if (config.threadNames) {
-			if (ctx->threadName) {
-				printf(FORMATSTR_THREAD_NAME, ctx->threadName, msg);
+		bool usePrintf = true;
+#if OS_MACOS
+		if (config.coloredConsole) {
+			usePrintf = false;
+			if (config.threadNames) {
+				if (ctx->threadName) {
+					os_log_with_type(OS_LOG_DEFAULT, logLevelToOsLogType(level), "(%{public}s):%{public}s", ctx->threadName, msg);
+				} else {
+					os_log_with_type(OS_LOG_DEFAULT, logLevelToOsLogType(level), "(%{public}llu):%{public}s", (unsigned long long)ctx->threadId, msg);
+				}
 			} else {
-				printf(FORMATSTR_THREAD_ID, (unsigned long long)ctx->threadId, msg);
+				os_log_with_type(OS_LOG_DEFAULT, logLevelToOsLogType(level), "%{public}s", msg);
 			}
-		} else {
-			printf(FORMATSTR_NO_THREAD, msg);
+		}
+#endif // OS_MACOS
+		
+		if (usePrintf) {
+			if (config.threadNames) {
+				if (ctx->threadName) {
+					printf(FORMATSTR_THREAD_NAME, ctx->threadName, msg);
+				} else {
+					printf(FORMATSTR_THREAD_ID, (unsigned long long)ctx->threadId, msg);
+				}
+			} else {
+				printf(FORMATSTR_NO_THREAD, msg);
+			}
 		}
 
 		if (config.coloredConsole) {
 #if OS_WINDOWS
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#elif OS_MACOS
+			// Do nothing. MacOS console does coloring itself.
 #else
 			if (level >= Warning)
 				printf("\033[0m");

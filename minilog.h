@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /**
 	minilog v1.1.0
@@ -28,7 +28,7 @@ struct LogConfig {
 	bool forceFlush                  = true;           // call fflush() after every log() and logRaw()
 	bool writeIntro                  = true;
 	bool writeOutro                  = true;
-	bool coloredConsole              = true;         // apply colors to console output (Windows, escape sequences)
+	bool coloredConsole              = true;         // apply colors to console output (Windows, macOS, escape sequences)
 	bool htmlLog                     = false;        // output everything as HTML instead of plain text
 	bool threadNames                 = true;         // prefix log messages with thread names
 	const char* htmlPageTitle        = "Minilog";    // just the title of the resulting HTML page

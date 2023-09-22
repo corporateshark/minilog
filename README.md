@@ -1,4 +1,4 @@
-# 🪵 minilog ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)  [![GitHub](https://img.shields.io/badge/repo-github-green.svg)](https://github.com/corporateshark/minilog)
+# 🪵 minilog ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)  [![Build Status](https://github.com/corporateshark/lightweightvk/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/corporateshark/lightweightvk/actions)
 Minimalistic logging library with threads and manual callstacks.
 
 ## Features

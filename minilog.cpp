@@ -290,19 +290,23 @@ static void writeMessageToLog(minilog::eLogLevel level, const char* msg, const T
 	if (!logFile)
 		return;
 
-	if (ctx->threadName)
-		if (config.htmlLog)
-		{
-			const int threadID = strcmp(ctx->threadName, config.mainThreadName) ? 1 : 0;
-			fprintf(logFile, "%s(%s):%s</div>\n", kHTMLPrefix[2 * level + threadID], ctx->threadName, msg);
-		}
-		else
-			fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
-	else
-		if (config.htmlLog)
+	if (config.threadNames)
+		if (ctx->threadName)
+			if (config.htmlLog) {
+				const int threadID = strcmp(ctx->threadName, config.mainThreadName) ? 1 : 0;
+				fprintf(logFile, "%s(%s):%s</div>\n", kHTMLPrefix[2 * level + threadID], ctx->threadName, msg);
+			} else
+				fprintf(logFile, "(%s):%s\n", ctx->threadName, msg);
+		else if (config.htmlLog)
 			fprintf(logFile, "%s(%llu):%s</div>\n", kHTMLPrefix[2 * level], (unsigned long long)ctx->threadId, msg);
 		else
 			fprintf(logFile, "(%llu):%s\n", (unsigned long long)ctx->threadId, msg);
+	else {
+		if (config.htmlLog)
+			fprintf(logFile, "%s%s</div>\n", kHTMLPrefix[2 * level], msg);
+		else
+			fprintf(logFile, "%s\n", msg);
+	}
 
 	if (config.forceFlush)
 		fflush(logFile);

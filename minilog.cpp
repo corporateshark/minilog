@@ -475,6 +475,8 @@ void minilog::logRaw(eLogLevel level, const char* format, va_list args)
 #if defined(MINILOG_RAW_OUTPUT)
 	printMessageToConsole(level, buffer, ctx);
 #endif // MINILOG_RAW_OUTPUT
+
+	invokeCallbacks(level, buffer);
 }
 
 bool minilog::callstackPushProc(const char* name)

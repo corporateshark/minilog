@@ -106,6 +106,33 @@ void testCallbacks()
 	minilog::deinitialize();
 }
 
+char* writeCustomTimeStamp(char* buffer, const char* bufferEnd)
+{
+	time_t tempTime;
+	time(&tempTime);
+	::tm tmTime = *localtime(&tempTime);
+
+	const char* monthName[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+	const int n = snprintf(
+		 buffer, uint32_t(bufferEnd - buffer), "%04d.%s.%02d-%02d:%02d:%02d.%03d   ", tmTime.tm_year + 1900, monthName[tmTime.tm_mon],
+		 tmTime.tm_mday, tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, minilog::getCurrentMilliseconds());
+
+	return buffer + n;
+}
+
+void testCustomTimestamp() {
+	minilog::initialize("log_timestamps.txt", { .writeTimeStamp = &writeCustomTimeStamp });
+
+	minilog::callstackPushProc("testCustomTimeStamp()->");
+	minilog::log(minilog::Log, "New Time Stamp!");
+	minilog::log(minilog::Warning, "Another Time Stamp!!!");
+	minilog::callstackPopProc();
+
+	minilog::deinitialize();
+}
+
+
 int main()
 {
 	testTXT();
@@ -114,6 +141,7 @@ int main()
 	testCallstack();
 	testCallstackMacros();
 	testCallbacks();
+	testCustomTimestamp();
 
 	return 0;
 }

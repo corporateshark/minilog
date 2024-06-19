@@ -1,10 +1,10 @@
 #pragma once
 
 /**
-	minilog v1.1.0
+	minilog v1.2.0
 
 	MIT License
-	Copyright (c) 2021-2023 Sergey Kosarevsky
+	Copyright (c) 2021-2024 Sergey Kosarevsky
    https://github.com/corporateshark/minilog
 **/
 
@@ -22,6 +22,11 @@ enum eLogLevel {
 	Warning    = 3,
 	FatalError = 4
 };
+
+// A user function to write a time stamp into a buffer `buffer`; it should not write past the pointer `bufferEnd`.
+// It returns a pointer to the end of the written data.
+using writeTimeStampFn = char* (*)(char* buffer, const char* bufferEnd);
+
 struct LogConfig {
 	eLogLevel logLevel               = minilog::Debug; // everything >= this level goes to the log file
 	eLogLevel logLevelPrintToConsole = minilog::Log;   // everything >= this level is printed to the console (cannot be lower than logLevel)
@@ -35,6 +40,7 @@ struct LogConfig {
 	const char* htmlPageHeader       = nullptr;      // override default HTML header
 	const char* htmlPageFooter       = nullptr;      // override default HTML footer
 	const char* mainThreadName       = "MainThread"; // just the name of the thread which calls minilog::initialize()
+	writeTimeStampFn writeTimeStamp  = nullptr;      // override default time stamp function
 };
 
 bool initialize(const char* fileName, const LogConfig& cfg); // non-thread-safe
@@ -81,6 +87,9 @@ class CallstackScope
  private:
 	char buffer_[kBufferSize];
 };
+
+unsigned int getCurrentMilliseconds();
+
 } // namespace minilog
 
 // clang-format off

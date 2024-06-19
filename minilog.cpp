@@ -3,7 +3,7 @@ minilog
 
 MIT License
 
-Copyright (c) 2021-2023 Sergey Kosarevsky
+Copyright (c) 2021-2024 Sergey Kosarevsky
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -225,7 +225,7 @@ static ThreadLogContext* getThreadLogContext()
 	return &ctx;
 }
 
-static uint32_t getCurrentMilliseconds()
+unsigned int minilog::getCurrentMilliseconds()
 {
 #if OS_WINDOWS
 	SYSTEMTIME st;
@@ -244,7 +244,9 @@ static char* writeTimeStamp(char* buffer, const char* bufferEnd)
 	time(&tempTime);
 	::tm tmTime = *localtime(&tempTime);
 
-	const int n = snprintf(buffer, uint32_t(bufferEnd-buffer), "%02d:%02d:%02d.%03d   ", tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, getCurrentMilliseconds());
+	const int n = snprintf(
+		 buffer, uint32_t(bufferEnd - buffer), "%02d:%02d:%02d.%03d   ", tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec,
+		 minilog::getCurrentMilliseconds());
 
 	return buffer + n;
 }
@@ -428,7 +430,7 @@ void minilog::log(eLogLevel level, const char* format, va_list args)
 	char buffer[kBufferLength];
 	const char* bufferEnd = buffer + kBufferLength - 1;
 
-	char* scratchBuf = writeTimeStamp(buffer, bufferEnd);
+	char* scratchBuf = config.writeTimeStamp ? config.writeTimeStamp(buffer, bufferEnd) : writeTimeStamp(buffer, bufferEnd);
 	scratchBuf = writeCurrentProcsNesting(scratchBuf, bufferEnd);
 	const char* msg = scratchBuf; // store where the actual message starts
 

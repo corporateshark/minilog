@@ -12,6 +12,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(minilog minilog.cpp minilog.h)
 
+if(ANDROID)
+	target_link_libraries(minilog PUBLIC log)
+endif()
+
 if(MINILOG_RAW_OUTPUT)
 	target_compile_definitions(minilog PUBLIC "-DMINILOG_RAW_OUTPUT=1")
 endif()

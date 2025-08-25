@@ -4,7 +4,7 @@
 	minilog v1.2.0
 
 	MIT License
-	Copyright (c) 2021-2024 Sergey Kosarevsky
+	Copyright (c) 2021-2025 Sergey Kosarevsky
    https://github.com/corporateshark/minilog
 **/
 

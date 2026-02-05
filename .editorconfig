@@ -2,8 +2,8 @@ root = true
 
 # C++
 [*.{c,cpp,h}]
-indent_style = tab
-indent_size = 3
+indent_style = space
+indent_size = 2
 tab_width = 3
 end_of_line = crlf
 trim_trailing_whitespace = true

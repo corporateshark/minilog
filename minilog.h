@@ -98,11 +98,13 @@ unsigned int getCurrentMilliseconds();
 #	define LLOGD(...) MINILOG_LOG_PROC(minilog::Debug, ##__VA_ARGS__)
 #	define LLOGL(...) MINILOG_LOG_PROC(minilog::Log, ##__VA_ARGS__)
 #	define LLOGW(...) MINILOG_LOG_PROC(minilog::Warning, ##__VA_ARGS__)
+#	define LLOGE(...) MINILOG_LOG_PROC(minilog::FatalError, ##__VA_ARGS__)
 #else
 #	define LLOGP(...) MINILOG_LOG_PROC(minilog::Paranoid, ## __VA_ARGS__)
 #	define LLOGD(...) MINILOG_LOG_PROC(minilog::Debug, ## __VA_ARGS__)
 #	define LLOGL(...) MINILOG_LOG_PROC(minilog::Log, ## __VA_ARGS__)
 #	define LLOGW(...) MINILOG_LOG_PROC(minilog::Warning, ## __VA_ARGS__)
+#	define LLOGE(...) MINILOG_LOG_PROC(minilog::FatalError, ## __VA_ARGS__)
 #endif
 
 #endif // MINILOG_DISABLE_HELPER_MACROS

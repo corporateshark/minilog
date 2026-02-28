@@ -351,11 +351,25 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
         return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
       };
       SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), getAttr(level));
-#elif OS_MACOS
-      // Do nothing. MacOS console does coloring itself.
 #else
-      if (level >= Warning)
+      // ANSI colors for macOS and Linux terminals
+      switch (level) {
+      case Paranoid:
+        printf("\033[0;90m");
+        break;
+      case Debug:
+        printf("\033[0m");
+        break;
+      case Log:
+        printf("\033[1m");
+        break;
+      case Warning:
+        printf("\033[1;33m");
+        break;
+      case FatalError:
         printf("\033[1;31m");
+        break;
+      }
 #endif // OS_WINDOWS
     }
 
@@ -398,11 +412,8 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
     if (config.coloredConsole) {
 #if OS_WINDOWS
       SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-#elif OS_MACOS
-      // Do nothing. MacOS console does coloring itself.
 #else
-      if (level >= Warning)
-        printf("\033[0m");
+      printf("\033[0m");
 #endif // OS_WINDOWS
     }
   }

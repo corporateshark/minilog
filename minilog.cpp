@@ -366,10 +366,8 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
 #endif
     // clang-format on
 
-    bool usePrintf = true;
 #if OS_MACOS
     if (config.coloredConsole) {
-      usePrintf = false;
       if (config.threadNames) {
         if (ctx->threadName) {
           os_log_with_type(OS_LOG_DEFAULT, logLevelToOsLogType(level), "(%{public}s):%{public}s", ctx->threadName, msg);
@@ -382,16 +380,14 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
     }
 #endif // OS_MACOS
 
-    if (usePrintf) {
-      if (config.threadNames) {
-        if (ctx->threadName) {
-          printf(FORMATSTR_THREAD_NAME, ctx->threadName, msg);
-        } else {
-          printf(FORMATSTR_THREAD_ID, (unsigned long long)ctx->threadId, msg);
-        }
+    if (config.threadNames) {
+      if (ctx->threadName) {
+        printf(FORMATSTR_THREAD_NAME, ctx->threadName, msg);
       } else {
-        printf(FORMATSTR_NO_THREAD, msg);
+        printf(FORMATSTR_THREAD_ID, (unsigned long long)ctx->threadId, msg);
       }
+    } else {
+      printf(FORMATSTR_NO_THREAD, msg);
     }
 
     if (config.coloredConsole) {

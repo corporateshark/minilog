@@ -49,10 +49,10 @@ jobs:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
           run: |
-            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+            cmake -G "${{ matrix.config.generators }}" -S "${{ github.workspace }}" -B build
             cd build
             cmake --build .
-  
+
   cmake-build-android:
       name: "Android (Ubuntu)"
       runs-on: ubuntu-latest
@@ -110,6 +110,6 @@ jobs:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
           run: |
-            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+            cmake -G "${{ matrix.config.generators }}" -S "${{ github.workspace }}" -B build
             cd build
             cmake --build .

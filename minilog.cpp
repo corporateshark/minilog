@@ -417,6 +417,10 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
 #endif // OS_WINDOWS
     }
   }
+
+#undef FORMATSTR_THREAD_NAME
+#undef FORMATSTR_THREAD_ID
+#undef FORMATSTR_NO_THREAD
 }
 
 void minilog::log(eLogLevel level, const char* format, ...) {

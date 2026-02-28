@@ -17,7 +17,7 @@ if(ANDROID)
 endif()
 
 if(MINILOG_RAW_OUTPUT)
-	target_compile_definitions(minilog PUBLIC "-DMINILOG_RAW_OUTPUT=1")
+	target_compile_definitions(minilog PUBLIC MINILOG_RAW_OUTPUT=1)
 endif()
 
 if(MINILOG_BUILD_EXAMPLE)

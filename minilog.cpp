@@ -53,7 +53,7 @@ void logRaw(eLogLevel level, const char* format, va_list args);
 #endif
 
 #if defined(__APPLE__)
-#  define OS_MACOS 1
+#  define OS_APPLE 1
 #endif
 
 #if defined(__ANDROID__)
@@ -75,7 +75,7 @@ void logRaw(eLogLevel level, const char* format, va_list args);
 #  include <android/log.h>
 #endif
 
-#if OS_MACOS
+#if OS_APPLE
 #  include <os/log.h>
 #endif
 // clang-format on
@@ -100,7 +100,7 @@ struct ThreadLogContext {
   bool hasLogsOnThisLevel[kMaxProcsNesting] = {false};
 };
 
-#if OS_MACOS
+#if OS_APPLE
 static os_log_type_t logLevelToOsLogType(minilog::eLogLevel level) {
   switch (level) {
   case minilog::eLogLevel::Paranoid:
@@ -209,7 +209,7 @@ void minilog::deinitialize() {
 static uint64_t getCurrentThreadHandle() {
 #if OS_WINDOWS
   return GetCurrentThreadId();
-#elif OS_MACOS
+#elif OS_APPLE
   return pthread_mach_thread_np(pthread_self());
 #else
   return pthread_self();
@@ -385,7 +385,7 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
 #endif
     // clang-format on
 
-#if OS_MACOS
+#if OS_APPLE
     if (config.coloredConsole) {
       if (config.threadNames) {
         if (ctx->threadName) {
@@ -397,7 +397,7 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
         os_log_with_type(OS_LOG_DEFAULT, logLevelToOsLogType(level), "%{public}s", msg);
       }
     }
-#endif // OS_MACOS
+#endif // OS_APPLE
 
     if (config.threadNames) {
       if (ctx->threadName) {

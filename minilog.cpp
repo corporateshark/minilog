@@ -240,7 +240,12 @@ unsigned int minilog::getCurrentMilliseconds() {
 static char* writeTimeStamp(char* buffer, const char* bufferEnd) {
   time_t tempTime;
   time(&tempTime);
-  ::tm tmTime = *localtime(&tempTime);
+  ::tm tmTime;
+#if OS_WINDOWS
+  localtime_s(&tmTime, &tempTime);
+#else
+  localtime_r(&tempTime, &tmTime);
+#endif
 
   const int n = snprintf(buffer,
                          uint32_t(bufferEnd - buffer),

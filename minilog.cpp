@@ -64,7 +64,6 @@ void logRaw(eLogLevel level, const char* format, va_list args);
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  define NOIME
-#  define WIN32_SUP
 #  include <windows.h>
 #else
 #  include <sys/time.h>

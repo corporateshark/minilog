@@ -42,8 +42,8 @@ void deinitialize(); // non-thread-safe
 void log(eLogLevel level, const char* format, ...); // thread-safe
 void logRaw(eLogLevel level, const char* format, ...); // thread-safe
 #if defined(MINILOG_ENABLE_VA_LIST)
-void log(eLogLevel level, const char* format, va_list args); // thread-safe
-void logRaw(eLogLevel level, const char* format, va_list args); // thread-safe
+void logVAList(eLogLevel level, const char* format, va_list args); // thread-safe
+void logRawVAList(eLogLevel level, const char* format, va_list args); // thread-safe
 #endif // MINILOG_ENABLE_VA_LIST
 
 /// threads management

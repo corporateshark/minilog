@@ -42,8 +42,8 @@ SOFTWARE.
 #if !defined(MINILOG_ENABLE_VA_LIST)
 // forward declaractions
 namespace minilog {
-void log(eLogLevel level, const char* format, va_list args);
-void logRaw(eLogLevel level, const char* format, va_list args);
+void logVAList(eLogLevel level, const char* format, va_list args);
+void logRawVAList(eLogLevel level, const char* format, va_list args);
 } // namespace minilog
 #endif // MINILOG_ENABLE_VA_LIST
 
@@ -425,11 +425,11 @@ static void printMessageToConsole(minilog::eLogLevel level, const char* msg, con
 void minilog::log(eLogLevel level, const char* format, ...) {
   va_list args;
   va_start(args, format);
-  log(level, format, args);
+  logVAList(level, format, args);
   va_end(args);
 }
 
-void minilog::log(eLogLevel level, const char* format, va_list args) {
+void minilog::logVAList(eLogLevel level, const char* format, va_list args) {
   if (level < config.logLevel)
     return;
 
@@ -460,11 +460,11 @@ void minilog::log(eLogLevel level, const char* format, va_list args) {
 void minilog::logRaw(eLogLevel level, const char* format, ...) {
   va_list args;
   va_start(args, format);
-  logRaw(level, format, args);
+  logRawVAList(level, format, args);
   va_end(args);
 }
 
-void minilog::logRaw(eLogLevel level, const char* format, va_list args) {
+void minilog::logRawVAList(eLogLevel level, const char* format, va_list args) {
   constexpr uint32_t kBufferLength = 8192;
 
   char buffer[kBufferLength];

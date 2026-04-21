@@ -548,16 +548,16 @@ minilog::CallstackScope::CallstackScope(const char* funcName, const char* format
   va_start(p, format);
   vsnprintf(argsBuf, kBufferSize - 1, format, p);
   va_end(p);
-  snprintf(buffer_, kBufferSize - 1, "%s(%s)->", funcName, argsBuf);
+  (void)snprintf(buffer_, kBufferSize - 1, "%s(%s)->", funcName, argsBuf);
 
   minilog::callstackPushProc(buffer_);
 }
 
 minilog::CallstackScope::CallstackScope(const char* funcName) {
 #if defined(__GNUC__) || defined(__clang__)
-  snprintf(buffer_, kBufferSize - 1, "%s->", funcName);
+  (void)snprintf(buffer_, kBufferSize - 1, "%s->", funcName);
 #else
-  snprintf(buffer_, kBufferSize - 1, "%s()->", funcName);
+  (void)snprintf(buffer_, kBufferSize - 1, "%s()->", funcName);
 #endif
   minilog::callstackPushProc(buffer_);
 }
